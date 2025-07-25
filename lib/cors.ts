@@ -1,4 +1,3 @@
-// lib/cors.ts - Helper para manejar CORS
 import { NextApiRequest, NextApiResponse } from "next";
 
 interface CorsOptions {
@@ -36,36 +35,40 @@ export function cors(
   options: CorsOptions = {}
 ): boolean {
   const config = { ...defaultOptions, ...options };
-  const { allowedOrigins, allowedMethods, allowedHeaders, allowCredentials } =
-    config;
+  const {
+    allowedOrigins,
+    allowedMethods,
+    allowedHeaders,
+    allowCredentials,
+  } = config;
 
   const origin = req.headers.origin;
 
-  // Configurar Access-Control-Allow-Origin
   if (origin && allowedOrigins?.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
-  } else {
+    res.setHeader("Vary", "Origin");
+  } else if (!allowCredentials) {
     res.setHeader("Access-Control-Allow-Origin", "*");
   }
 
-  // Configurar otros headers CORS
   if (allowCredentials) {
     res.setHeader("Access-Control-Allow-Credentials", "true");
   }
 
   if (allowedMethods) {
-    res.setHeader("Access-Control-Allow-Methods", allowedMethods.join(", "));
+    res.setHeader("Access-Control-Allow-Methods", allowedMethods.join(", ").toUpperCase());
   }
 
   if (allowedHeaders) {
-    res.setHeader("Access-Control-Allow-Headers", allowedHeaders.join(", "));
+    res.setHeader("Access-Control-Allow-Headers", allowedHeaders.join(", ").toUpperCase());
   }
 
-  // Manejar preflight request
+  res.setHeader("Access-Control-Max-Age", "86400"); // Cache preflight 24h
+
   if (req.method === "OPTIONS") {
     res.status(200).end();
-    return true; // Indica que se manejó el preflight
+    return true; // Preflight handled
   }
 
-  return false; // Indica que debe continuar con el handler normal
+  return false; // Continue with normal handler
 }

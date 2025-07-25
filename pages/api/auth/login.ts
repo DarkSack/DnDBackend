@@ -1,14 +1,19 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { ApiResponse, SignInData } from "@/Interfaces/Auth";
 import supabase from "@/utils/Client";
+import { cors } from "@/lib/cors";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse>
 ): Promise<void> {
-  // Validar método HTTP
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido" });
+  if (
+    cors(req, res, {
+      allowedOrigins: ["https://dn-d-inky.vercel.app"],
+      allowCredentials: false,
+    })
+  ) {
+    return;
   }
 
   // Extraer y validar datos del body
