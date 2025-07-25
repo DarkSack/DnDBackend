@@ -27,8 +27,9 @@ Backend para la aplicación web de mesa de rol, una plataforma donde los jugador
    npm install
    ```
 3. Configurar variables de entorno:
-   - `DATABASE_URL` - URL de conexión a Supabase
+   - `SUPABASE_URL` - URL de conexión a Supabase
    - `JWT_SECRET` - Clave secreta para JWT
+   - `GROQ_API_KEY` - Clave anónima de Supabase
    - `NEXTAUTH_URL` - URL de la aplicación
 
 ## Estructura del Proyecto
