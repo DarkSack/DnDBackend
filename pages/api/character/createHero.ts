@@ -40,7 +40,10 @@ export default async function handler(
       });
     }
 
-    return res.status(201).json({ data: data[0] });
+    return res.status(201).json({
+      user: data[0],
+      token: "" // Add token if needed for character creation
+    });
   } catch (error) {
     console.error("Error interno:", error);
     return res.status(500).json({ error: "Error interno del servidor" });
