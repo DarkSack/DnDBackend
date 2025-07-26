@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
-  // Manejar CORS para todas las rutas de API
   if (request.nextUrl.pathname.startsWith("/api/")) {
     const origin = request.headers.get("origin");
     const allowedOrigins = [
@@ -10,10 +9,8 @@ export function middleware(request: NextRequest) {
       "https://dn-d-inky.vercel.app",
     ];
 
-    // Crear response
     const response = NextResponse.next();
 
-    // Establecer headers CORS
     if (origin && allowedOrigins.includes(origin)) {
       response.headers.set("Access-Control-Allow-Origin", origin);
     }
@@ -29,7 +26,6 @@ export function middleware(request: NextRequest) {
     response.headers.set("Access-Control-Allow-Credentials", "true");
     response.headers.set("Access-Control-Max-Age", "86400");
 
-    // Manejar preflight requests
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 200, headers: response.headers });
     }
