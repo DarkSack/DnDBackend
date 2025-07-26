@@ -5,6 +5,8 @@ import Cors from "cors";
 
 const cors = Cors({
   methods: ["POST"],
+  origin: ["http://localhost:3000", "https://dn-d-inky.vercel.app"],
+  credentials: true,
 });
 
 function runMiddleware(
