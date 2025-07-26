@@ -1,23 +1,32 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { ApiResponse, SignInData } from "@/Interfaces/Auth";
 import supabase from "@/utils/Client";
+import Cors from "cors";
+
+const cors = Cors({
+  methods: ["POST"],
+});
+
+function runMiddleware(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  fn: Function
+) {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (result) => {
+      if (result instanceof Error) {
+        return reject(result);
+      }
+      return resolve(result);
+    });
+  });
+}
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse>
 ): Promise<void> {
-  // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  if (req.method === "OPTIONS") {
-    res.status(200).end();
-    return;
-  }
+  await runMiddleware(req, res, cors);
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
