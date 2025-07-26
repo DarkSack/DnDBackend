@@ -1,53 +1,43 @@
-// middleware.ts en la raíz del proyecto
 import { NextRequest, NextResponse } from "next/server";
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "https://dn-d-inky.vercel.app",
-];
-
 export function middleware(request: NextRequest) {
-  const origin = request.headers.get("origin") || "";
-  const isAllowedOrigin = allowedOrigins.includes(origin);
+  // Manejar CORS para todas las rutas de API
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    const origin = request.headers.get("origin");
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://dn-d-inky.vercel.app",
+    ];
 
-  // Si es una preflight request (OPTIONS), responder directamente
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        "Access-Control-Allow-Origin": isAllowedOrigin ? origin : "*",
-        "Access-Control-Allow-Methods":
-          "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-        "Access-Control-Allow-Headers":
-          "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Max-Age": "86400",
-      },
-    });
+    // Crear response
+    const response = NextResponse.next();
+
+    // Establecer headers CORS
+    if (origin && allowedOrigins.includes(origin)) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+    }
+
+    response.headers.set(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    );
+    response.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With, Accept"
+    );
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+    response.headers.set("Access-Control-Max-Age", "86400");
+
+    // Manejar preflight requests
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 200, headers: response.headers });
+    }
+
+    return response;
   }
-
-  const response = NextResponse.next();
-
-  // Agregar headers CORS al resto de métodos
-  response.headers.set(
-    "Access-Control-Allow-Origin",
-    isAllowedOrigin ? origin : "*"
-  );
-  response.headers.set("Access-Control-Allow-Credentials", "true");
-  response.headers.set(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  response.headers.set(
-    "Access-Control-Allow-Headers",
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
-  );
-  response.headers.set("Vary", "Origin");
-
-  return response;
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: "/api/:path*",
 };
