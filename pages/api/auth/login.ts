@@ -1,15 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { ApiResponse, SignInData } from "@/Interfaces/Auth";
 import supabase from "@/utils/Client";
-import { runMiddleware } from "@/middleware/cors";
-
-
+import ALLOWED_ORIGIN from "@/lib/Const";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse>
 ): Promise<void> {
-  await runMiddleware(req, res);
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
@@ -67,6 +64,7 @@ export default async function handler(
       username: userData.username,
       avatar_url: userData.avatar_url,
     };
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
     return res.status(200).json({
       user,
       token: data.session.access_token,
