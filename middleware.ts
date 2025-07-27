@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { allowedOrigins } from "./lib/Const";
+import allowedOrigins from "./lib/Const";
 
 export const config = {
   matcher: "/api/:path*", // Apply only to API routes
