@@ -1,34 +1,15 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { ApiResponse, SignInData } from "@/Interfaces/Auth";
 import supabase from "@/utils/Client";
-import Cors from "cors";
+import { runMiddleware } from "@/middleware/cors";
 
-const cors = Cors({
-  methods: ["POST"],
-  origin: ["http://localhost:3000", "https://dn-d-inky.vercel.app"],
-  credentials: true,
-});
 
-function runMiddleware(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  fn: Function
-) {
-  return new Promise((resolve, reject) => {
-    fn(req, res, (result) => {
-      if (result instanceof Error) {
-        return reject(result);
-      }
-      return resolve(result);
-    });
-  });
-}
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse>
 ): Promise<void> {
-  await runMiddleware(req, res, cors);
+  await runMiddleware(req, res);
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
