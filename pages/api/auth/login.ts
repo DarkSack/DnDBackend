@@ -3,20 +3,17 @@ import { ApiResponse, SignInData } from "@/Interfaces/Auth";
 import supabase from "@/utils/Client";
 import ALLOWED_ORIGIN from "@/lib/Const";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiResponse>
-): Promise<void> {
+export default async function handler(req: NextApiRequest): Promise<Response> {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido" });
+    return Response.json({ error: "Método no permitido" });
   }
   const { email, password }: SignInData = req.body;
   if (!email || !password) {
-    return res.status(400).json({ error: "Email y contraseña requeridos" });
+    return Response.json({ error: "Email y contraseña requeridos" });
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: "Email no válido" });
+    return Response.json({ error: "Email no válido" });
   }
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -30,26 +27,26 @@ export default async function handler(
         error.code === "invalid_login_credentials" ||
         error.code === "invalid_credentials"
       ) {
-        return res.status(401).json({
+        return Response.json({
           error: "Usuario no encontrado o contraseña incorrecta",
         });
       }
       if (error.message.includes("Email not confirmed")) {
-        return res.status(401).json({
+        return Response.json({
           error: "Por favor confirma tu email antes de iniciar sesión",
         });
       }
       if (error.message.includes("Too many requests")) {
-        return res.status(429).json({
+        return Response.json({
           error: "Demasiados intentos de inicio de sesión. Intenta más tarde",
         });
       }
-      return res.status(400).json({
+      return Response.json({
         error: error.message || "Error desconocido",
       });
     }
     if (!data.user || !data.session) {
-      return res.status(401).json({
+      return Response.json({
         error: "No se pudo iniciar sesión",
       });
     }
@@ -64,13 +61,19 @@ export default async function handler(
       username: userData.username,
       avatar_url: userData.avatar_url,
     };
-    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
-    return res.status(200).json({
-      user,
-      token: data.session.access_token,
-    });
+    return Response.json(
+      {
+        user,
+        token: data.session.access_token,
+      },
+      {
+        headers: {
+          "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+        },
+      }
+    );
   } catch (error) {
     console.error("Error interno:", error);
-    return res.status(500).json({ error: "Error interno del servidor" });
+    return Response.json({ error: "Error interno del servidor" });
   }
 }
