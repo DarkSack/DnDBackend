@@ -1,74 +1,87 @@
-# 🐉 DnD Backend
+# DnDBackend — Generador de personajes y campañas de rol con IA
 
-Backend para una **plataforma web de mesas de rol** (Dungeons & Dragons y sistemas afines). Los jugadores pueden registrarse, crear personajes, unirse a salas de juego, agregar amigos y disfrutar de experiencias narrativas asistidas con IA.
-
-Construido sobre **Next.js API Routes** con **Supabase** como base de datos y **Groq / Replicate** para generación de texto e imagen.
+Backend para una **plataforma web de mesas de rol al estilo D&D**. Su parte más vistosa: si eres un jugador que se quedó en blanco o un DM que necesita improvisar en 30 segundos, el sistema te **genera personajes completos** (con atributos, trasfondo, alineamiento) y **campañas originales** (con antagonistas, facciones, ubicaciones) usando un modelo LLM. Además cubre la fontanería clásica de la app: registro/login de usuarios, salas de juego y personajes propios.
 
 ---
 
-## ✨ Características
+## Qué hace
 
-- 🔐 **Autenticación** con JWT (registro / login / refresh)
-- 🧙 **Gestión de personajes** — creación, edición, historial y hojas de personaje
-- 🏰 **Sistema de salas** — crear salas privadas o públicas, invitar y unirse
-- 👥 **Amigos y social** — invitaciones, lista de amigos, estado en línea
-- 🤖 **Integración con IA** — generación de descripciones, retratos e historias vía **Groq** + **Replicate**
-- 🛡️ **Rate limiting** con `rate-limiter-flexible`
-- 🌐 **CORS** configurable para conectar cualquier frontend
+### 🧙 Generación de héroes con IA
+
+`POST /api/character/summonHero` → pide a **Groq** un personaje medieval fantástico coherente. Devuelve un JSON estricto con:
+
+- Nombre, género, raza (Humano, Elfo, Enano, Orco…), clase (Guerrero, Mago, Pícaro…), edad.
+- 6 atributos base D&D (fuerza, destreza, constitución, inteligencia, sabiduría, carisma) balanceados 1–20.
+- Rasgos físicos y de personalidad, trasfondo, habilidades, rasgos únicos.
+- Alineamiento (Legal Bueno … Caótico Malvado) y religión coherentes con el trasfondo.
+
+### 🏰 Creación y guardado de personajes propios
+
+`POST /api/character/createHero` → guarda el personaje en la tabla `characters` de **Supabase**. Valida los campos y devuelve el registro creado.
+
+### 📚 Generación de campañas
+
+`POST /api/histories/createHistory` → arma una campaña con título, ambientación, trama, NPCs clave, ubicaciones, antagonista principal, facciones, elementos únicos, dificultad y duración estimada.
+
+`POST /api/histories/continueHistory` → continúa una historia existente a partir del último estado.
+
+### 🔐 Auth
+
+- `POST /api/auth/register` — alta de usuario.
+- `POST /api/auth/login` — login y emisión de JWT.
+- `middleware.ts` — verifica el JWT en las rutas protegidas.
+
+### 🎲 Salas de juego
+
+- `POST /api/room/createRoom` — crea una sala privada o pública.
+- (Más endpoints en `pages/api/room/` para unirse / listar).
 
 ---
 
-## 🧱 Stack Tecnológico
-
-| Capa       | Tecnología                                |
-| ---------- | ----------------------------------------- |
-| Framework  | Next.js 15 (App/Pages Router) + React 19  |
-| Runtime    | Node.js                                   |
-| Base datos | Supabase (PostgreSQL)                     |
-| Auth       | JWT                                       |
-| IA         | Groq SDK · Replicate                      |
-| Seguridad  | rate-limiter-flexible · CORS              |
-| Lenguaje   | TypeScript + JavaScript                   |
-
----
-
-## 🚀 Instalación
+## Cómo se usa (ejemplo)
 
 ```bash
-# 1. Clonar
+# Generar un héroe con IA
+curl -X POST https://<tu-deploy>/api/character/summonHero \
+  -H "Authorization: Bearer $JWT"
+
+# Registrar ese héroe en tu cuenta
+curl -X POST https://<tu-deploy>/api/character/createHero \
+  -H "Authorization: Bearer $JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"nombre":"Aelric","raza":"Elfo","clase":"Explorador", ... }'
+```
+
+---
+
+## Bajo el capó
+
+- **Framework:** Next.js 15 (API Routes) sobre React 19.
+- **DB:** Supabase (PostgreSQL) — tablas `characters`, `rooms`, `histories`, `users`, `friends`.
+- **IA:** **Groq SDK** para generación de texto (personajes / campañas); **Replicate** disponible para imágenes.
+- **Auth:** JWT.
+- **Rate limiting:** `rate-limiter-flexible` — protege los endpoints de IA contra abuso.
+- **CORS:** activado desde `middleware.ts` para que cualquier frontend pueda conectarse.
+
+---
+
+## Setup local
+
+```bash
 git clone https://github.com/DarkSack/DnDBackend.git
 cd DnDBackend
-
-# 2. Dependencias
 npm install
-
-# 3. Configurar entorno (ver sección .env)
-cp .env.example .env.local   # si existe
-
-# 4. Servidor de desarrollo
-npm run dev
-# → http://localhost:3000
+npm run dev            # http://localhost:3000
 ```
 
-Para producción:
-
-```bash
-npm run build
-npm start
-```
-
----
-
-## 🔐 Variables de entorno
-
-Crea un archivo `.env.local` en la raíz con:
+### Variables de entorno
 
 ```env
 SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOi...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
 
-JWT_SECRET=una_clave_muy_larga_y_secreta
+JWT_SECRET=una_clave_muy_larga
 
 GROQ_API_KEY=gsk_...
 REPLICATE_API_TOKEN=r8_...
@@ -78,49 +91,23 @@ NEXTAUTH_URL=http://localhost:3000
 
 ---
 
-## 📁 Estructura
+## Estructura
 
 ```
 DnDBackend/
-├── pages/
-│   ├── api/
-│   │   ├── auth/         # /register /login /me
-│   │   ├── character/    # CRUD de personajes
-│   │   ├── room/         # Salas y matchmaking
-│   │   └── histories/    # Historias generadas con IA
-│   ├── _app.js
-│   └── index.js
-├── Interfaces/           # Tipos TS compartidos
-├── lib/                  # Cliente Supabase, helpers
-├── utils/                # Funciones auxiliares
-├── middleware.ts         # Middleware global (auth, CORS)
-├── docs/                 # Documentación adicional
-├── next.config.mjs
-└── tsconfig.json
+├── pages/api/
+│   ├── auth/          # register, login
+│   ├── character/     # createHero, summonHero
+│   ├── histories/     # createHistory, continueHistory
+│   └── room/          # createRoom, join, list
+├── utils/
+│   ├── Client.ts      # cliente Supabase
+│   ├── prompts.js     # prompts detallados para Groq (summonHero, summonCampaign)
+│   └── functions.js
+├── Interfaces/        # Tipos TS (Auth, Characters, Rooms, Campaings)
+├── lib/Const.ts
+└── middleware.ts      # Auth + CORS
 ```
-
----
-
-## 🔌 Endpoints principales
-
-| Método | Ruta                        | Descripción                              |
-| ------ | --------------------------- | ---------------------------------------- |
-| POST   | `/api/auth/register`        | Registrar un usuario                     |
-| POST   | `/api/auth/login`           | Iniciar sesión y recibir JWT             |
-| GET    | `/api/character`            | Listar personajes del usuario            |
-| POST   | `/api/character`            | Crear personaje                          |
-| GET    | `/api/room`                 | Listar salas disponibles                 |
-| POST   | `/api/room`                 | Crear una sala                           |
-| POST   | `/api/room/join`            | Unirse a una sala                        |
-| POST   | `/api/histories/generate`   | Generar historia / descripción con IA    |
-
-> Consulta la carpeta `docs/` para el detalle completo de request/response.
-
----
-
-## 🤝 Contribución
-
-Se aceptan _issues_ y _pull requests_. Por favor abre un issue antes de trabajar en un cambio grande.
 
 ---
 
